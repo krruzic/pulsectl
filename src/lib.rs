@@ -1,3 +1,23 @@
+// ! `pulsectl` is a high level wrapper around the PulseAudio bindings supplied by
+// ! `libpulse_binding`. It provides simple access to sinks, inputs, sources and outputs allowing
+// ! one to write audio control programs with ease.
+// !
+// ! ## Quick Example
+// !
+// ! The following example demonstrates setting the volume on a user selected playback device
+// !
+// ! ```no_run
+// ! extern crate pulsectl;
+// ! use pulsectl::controllers::sink_controller::{SimpleSinkDevice, SimpleSinkStream, SinkController};
+// ! use pulsectl::controllers::{AppControl, DeviceControl};
+// ! fn main() {
+// !    let dev_ref = self.handler.list_devices().clone();
+// !    let dev_borrow = dev_ref.borrow();
+// !    let playback_dev_unwrapped = dev_borrow.iter().map(|x| x).collect::<Vec<_>>();
+// !
+// !    for dev in playback_dev_unwrapped {
+// !        println!("[{}] {}", dev.index, dev.
+
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
@@ -12,7 +32,6 @@ use pulse::{
 };
 
 pub mod controllers;
-pub mod types;
 
 pub struct Handler {
     pub mainloop: Rc<RefCell<Mainloop>>,
