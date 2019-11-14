@@ -8,7 +8,7 @@ This is a wrapper around the introspector, and thus this library is only capable
 
 Add this to your `Cargo.toml`:
 ```toml
-[dependencies] =
+[dependencies]
 rust-pulsectl = "0.2"
 ```
 
