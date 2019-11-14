@@ -6,7 +6,8 @@ use pulsectl::controllers::DeviceControl;
 use pulsectl::controllers::SinkController;
 
 fn main() {
-    let mut handler = SinkController::create(); // create handler that calls functions on playback devices and apps
+    // create handler that calls functions on playback devices and apps
+    let mut handler = SinkController::create();
     let devices = handler
         .list_devices()
         .expect("Could not get list of playback devices");
@@ -14,7 +15,7 @@ fn main() {
     println!("Playback Devices");
     for dev in devices.clone() {
         println!(
-            "[{}] {}, Volume: {}",
+            "[{}] {}, [Volume: {}]",
             dev.index,
             dev.description.as_ref().unwrap(),
             dev.volume.print()
@@ -27,8 +28,7 @@ fn main() {
         .expect("error: unable to read user input");
     for dev in devices.clone() {
         if let true = selection.trim() == dev.index.to_string() {
-            println!("hey");
-            handler.increase_device_volume_by_percent(100, 0.05);
+            handler.increase_device_volume_by_percent(dev.index, 0.05);
         }
     }
 }
