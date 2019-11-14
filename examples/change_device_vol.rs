@@ -2,16 +2,16 @@ extern crate pulsectl;
 
 use std::io;
 
-use pulsectl::controllers::sink_controller::{SinkController};
-use pulsectl::controllers::{AppControl, DeviceControl};
+use pulsectl::controllers::sink_controller::SinkController;
+use pulsectl::controllers::DeviceControl;
 fn main() {
     let mut handler = SinkController::create(); // create handler that calls functions on playback devices and apps
-    let dev_ref = handler.list_devices().expect("Could not get list of playback devices");
-    let dev_borrow = dev_ref;
-    let playback_dev_unwrapped = dev_borrow.iter().map(|x| x).collect::<Vec<_>>();
+    let devices = handler
+        .list_devices()
+        .expect("Could not get list of playback devices");
 
     println!("Playback Devices");
-    for dev in playback_dev_unwrapped.clone() {
+    for dev in devices.clone() {
         println!(
             "[{}] {}, Volume: {}",
             dev.index,
@@ -24,7 +24,7 @@ fn main() {
     io::stdin()
         .read_line(&mut selection)
         .expect("error: unable to read user input");
-    for dev in playback_dev_unwrapped {
+    for dev in devices.clone() {
         match selection.trim() == dev.index.to_string() {
             true => {
                 println!("hey");

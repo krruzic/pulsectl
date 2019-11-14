@@ -1,21 +1,20 @@
 use std::cell::RefCell;
 use std::clone::Clone;
-use std::ops::Deref;
+
 use std::rc::Rc;
 
 use pulse::callbacks::ListResult;
 use pulse::context::introspect;
-use pulse::proplist::Proplist;
-use pulse::time::MicroSeconds;
-use pulse::volume::{ChannelVolumes, Volume};
-use pulse::{channelmap, def, format, sample};
 
-use crate::controllers::types::{ServerInfo, ApplicationInfo};
+
+use pulse::volume::{ChannelVolumes, Volume};
+
+
+use crate::controllers::types::{ApplicationInfo, ServerInfo};
 use crate::Handler;
 
 use super::types;
-use super::PulseResult;
-use std::borrow::Borrow;
+
 
 pub struct SinkController {
     pub handler: Handler,
@@ -29,10 +28,14 @@ impl SinkController {
 
     pub fn get_server_info(&mut self) -> Result<ServerInfo, ()> {
         let server = Rc::new(RefCell::new(Some(None)));
-        let mut server_ref = server.clone();
+        let server_ref = server.clone();
 
         let op = self.handler.introspect.get_server_info(move |res| {
-            server_ref.borrow_mut().as_mut().unwrap().replace(res.into());
+            server_ref
+                .borrow_mut()
+                .as_mut()
+                .unwrap()
+                .replace(res.into());
         });
         self.handler.wait_for_operation(op)?;
         let mut result = server.borrow_mut();
@@ -50,7 +53,7 @@ impl super::DeviceControl<types::DeviceInfo> for SinkController {
     }
     fn set_default_device(&mut self, name: &str) -> Result<bool, ()> {
         let success = Rc::new(RefCell::new(false));
-        let mut success_ref = success.clone();
+        let success_ref = success.clone();
 
         let op = self
             .handler
@@ -79,7 +82,7 @@ impl super::DeviceControl<types::DeviceInfo> for SinkController {
     }
     fn get_device_by_index(&mut self, index: u32) -> Result<types::DeviceInfo, ()> {
         let device = Rc::new(RefCell::new(Some(None)));
-        let mut dev_ref = device.clone();
+        let dev_ref = device.clone();
         let op = self.handler.introspect.get_sink_info_by_index(
             index,
             move |sink_list: ListResult<&introspect::SinkInfo>| {
@@ -94,7 +97,7 @@ impl super::DeviceControl<types::DeviceInfo> for SinkController {
     }
     fn get_device_by_name(&mut self, name: &str) -> Result<types::DeviceInfo, ()> {
         let device = Rc::new(RefCell::new(Some(None)));
-        let mut dev_ref = device.clone();
+        let dev_ref = device.clone();
         let op = self.handler.introspect.get_sink_info_by_name(
             name,
             move |sink_list: ListResult<&introspect::SinkInfo>| {
@@ -172,7 +175,7 @@ impl super::AppControl<types::ApplicationInfo> for SinkController {
 
     fn get_app_by_index(&mut self, index: u32) -> Result<ApplicationInfo, ()> {
         let app = Rc::new(RefCell::new(Some(None)));
-        let mut app_ref = app.clone();
+        let app_ref = app.clone();
         let op = self.handler.introspect.get_sink_input_info(
             index,
             move |sink_list: ListResult<&introspect::SinkInputInfo>| {
@@ -222,11 +225,13 @@ impl super::AppControl<types::ApplicationInfo> for SinkController {
 
     fn move_app_by_index(&mut self, stream_index: u32, device_index: u32) -> Result<bool, ()> {
         let success = Rc::new(RefCell::new(false));
-        let mut success_ref = success.clone();
+        let success_ref = success.clone();
         let op = self.handler.introspect.move_sink_input_by_index(
             stream_index,
             device_index,
-            Some(Box::new(move |res| success_ref.borrow_mut().clone_from(&res))),
+            Some(Box::new(move |res| {
+                success_ref.borrow_mut().clone_from(&res)
+            })),
         );
         self.handler.wait_for_operation(op)?;
         let result = success.borrow_mut().clone();
@@ -235,11 +240,13 @@ impl super::AppControl<types::ApplicationInfo> for SinkController {
 
     fn move_app_by_name(&mut self, stream_index: u32, device_name: &str) -> Result<bool, ()> {
         let success = Rc::new(RefCell::new(false));
-        let mut success_ref = success.clone();
+        let success_ref = success.clone();
         let op = self.handler.introspect.move_sink_input_by_name(
             stream_index,
             device_name,
-            Some(Box::new(move |res| success_ref.borrow_mut().clone_from(&res))),
+            Some(Box::new(move |res| {
+                success_ref.borrow_mut().clone_from(&res)
+            })),
         );
         self.handler.wait_for_operation(op)?;
         let result = success.borrow_mut().clone();
@@ -248,11 +255,13 @@ impl super::AppControl<types::ApplicationInfo> for SinkController {
 
     fn set_app_mute(&mut self, index: u32, mute: bool) -> Result<bool, ()> {
         let success = Rc::new(RefCell::new(false));
-        let mut success_ref = success.clone();
+        let success_ref = success.clone();
         let op = self.handler.introspect.set_sink_input_mute(
             index,
             mute,
-            Some(Box::new(move |res| success_ref.borrow_mut().clone_from(&res))),
+            Some(Box::new(move |res| {
+                success_ref.borrow_mut().clone_from(&res)
+            })),
         );
         self.handler.wait_for_operation(op)?;
         let result = success.borrow_mut().clone();
