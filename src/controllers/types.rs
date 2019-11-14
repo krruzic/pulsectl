@@ -1,13 +1,17 @@
-use libpulse_binding::{channelmap, def, format, sample};
-use libpulse_binding::context::introspect;
-use libpulse_binding::def::PortAvailable;
-use libpulse_binding::proplist::Proplist;
-use libpulse_binding::time::MicroSeconds;
-use libpulse_binding::volume::{ChannelVolumes, Volume};
+use pulse::{
+    channelmap,
+    context::introspect,
+    def,
+    def::PortAvailable,
+    format,
+    proplist::Proplist,
+    sample,
+    time::MicroSeconds,
+    volume::{ChannelVolumes, Volume},
+};
 
 /// These structs are direct representations of what libpulse_binding gives
 /// created to be copyable / cloneable for use in and out of callbacks
-
 
 /// This is a wrapper around SinkPortInfo and SourcePortInfo as they have the same members
 #[derive(Clone)]
@@ -191,7 +195,10 @@ impl<'a> From<&'a introspect::SourceInfo<'a>> for DeviceInfo {
             volume: item.volume,
             mute: item.mute,
             monitor: item.monitor_of_sink,
-            monitor_name: item.monitor_of_sink_name.as_ref().map(|cow| cow.to_string()),
+            monitor_name: item
+                .monitor_of_sink_name
+                .as_ref()
+                .map(|cow| cow.to_string()),
             latency: item.latency,
             driver: item.driver.as_ref().map(|cow| cow.to_string()),
             flags: item.flags,

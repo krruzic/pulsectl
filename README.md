@@ -37,5 +37,6 @@ fn main() {
             dev.volume.print()
         );
     }
+}
 ```
 

@@ -1,28 +1,42 @@
-// ! `pulsectl` is a high level wrapper around the PulseAudio bindings supplied by
-// ! `libpulse_binding`. It provides simple access to sinks, inputs, sources and outputs allowing
-// ! one to write audio control programs with ease.
-// !
-// ! ## Quick Example
-// !
-// ! The following example demonstrates setting the volume on a user selected playback device
-// !
-// ! ```no_run
-// ! extern crate pulsectl;
-// ! use pulsectl::controllers::sink_controller::{SimpleSinkDevice, SimpleSinkStream, SinkController};
-// ! use pulsectl::controllers::{AppControl, DeviceControl};
-// ! fn main() {
-// !    let dev_ref = self.handler.list_devices().clone();
-// !    let dev_borrow = dev_ref.borrow();
-// !    let playback_dev_unwrapped = dev_borrow.iter().map(|x| x).collect::<Vec<_>>();
-// !
-// !    for dev in playback_dev_unwrapped {
-// !        println!("[{}] {}", dev.index, dev.
+/// `pulsectl` is a high level wrapper around the PulseAudio bindings supplied by
+/// `libpulse_binding`. It provides simple access to sinks, inputs, sources and outputs allowing
+/// one to write audio control programs with ease.
+///
+/// ## Quick Example
+///
+/// The following example demonstrates listing all of the playback devices currently connected
+///
+/// See examples/change_device_vol.rs for a more complete example
+/// ```no_run
+/// extern crate pulsectl;
+///
+/// use std::io;
+///
+/// use pulsectl::controllers::SinkController;
+/// use pulsectl::controllers::DeviceControl;
+/// fn main() {
+///     // create handler that calls functions on playback devices and apps
+///     let mut handler = SinkController::create();
+///     let devices = handler
+///         .list_devices()
+///        .expect("Could not get list of playback devices");
+///
+///     println!("Playback Devices");
+///     for dev in devices.clone() {
+///         println!(
+///             "[{}] {}, Volume: {}",
+///             dev.index,
+///             dev.description.as_ref().unwrap(),
+///             dev.volume.print()
+///         );
+///     }
+/// }
+/// ```
+extern crate libpulse_binding as pulse;
 
 use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
-
-extern crate libpulse_binding as pulse;
 
 use pulse::{
     context::{introspect, Context},
@@ -31,15 +45,19 @@ use pulse::{
     proplist::Proplist,
 };
 
+use crate::errors::{PulseCtlError, PulseCtlErrorType::*};
+
 pub mod controllers;
+mod errors;
 
 pub struct Handler {
     pub mainloop: Rc<RefCell<Mainloop>>,
     pub context: Rc<RefCell<Context>>,
     pub introspect: introspect::Introspector,
 }
+
 impl Handler {
-    pub fn connect(name: &str) -> Result<Handler, ()> {
+    pub fn connect(name: &str) -> Result<Handler, PulseCtlError> {
         let mut proplist = Proplist::new().unwrap();
         proplist
             .set_str(pulse::proplist::properties::APPLICATION_NAME, name)
@@ -61,18 +79,28 @@ impl Handler {
 
         loop {
             match mainloop.borrow_mut().iterate(false) {
-                IterateResult::Quit(_) | IterateResult::Err(_) => {
+                IterateResult::Err(e) => {
                     eprintln!("iterate state was not success, quitting...");
-                    return Err(());
+                    return Err(e.into());
                 }
                 IterateResult::Success(_) => {}
+                IterateResult::Quit(_) => {
+                    eprintln!("iterate state was not success, quitting...");
+                    return Err(PulseCtlError::new(
+                        ConnectError,
+                        "Iterate state quit without an error",
+                    ));
+                }
             }
 
             match context.borrow().get_state() {
                 pulse::context::State::Ready => break,
                 pulse::context::State::Failed | pulse::context::State::Terminated => {
                     eprintln!("context state failed/terminated, quitting...");
-                    return Err(());
+                    return Err(PulseCtlError::new(
+                        ConnectError,
+                        "Context state failed/terminated without an error",
+                    ));
                 }
                 _ => {}
             }
@@ -87,18 +115,32 @@ impl Handler {
     }
 
     // loop until the passed operation is completed
-    pub fn wait_for_operation<G: ?Sized>(&mut self, op: Operation<G>) -> Result<(), ()> {
+    pub fn wait_for_operation<G: ?Sized>(
+        &mut self,
+        op: Operation<G>,
+    ) -> Result<(), errors::PulseCtlError> {
         loop {
             match self.mainloop.borrow_mut().iterate(false) {
-                IterateResult::Quit(_) | IterateResult::Err(_) => return Err(()),
+                IterateResult::Err(e) => return Err(e.into()),
                 IterateResult::Success(_) => {}
+                IterateResult::Quit(_) => {
+                    return Err(PulseCtlError::new(
+                        OperationError,
+                        "Iterate state quit without an error",
+                    ));
+                }
             }
             match op.get_state() {
                 State::Done => {
                     break;
                 }
                 State::Running => {}
-                State::Cancelled => return Err(()),
+                State::Cancelled => {
+                    return Err(PulseCtlError::new(
+                        OperationError,
+                        "Operation cancelled without an error",
+                    ));
+                }
             }
         }
         Ok(())
