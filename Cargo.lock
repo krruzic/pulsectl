@@ -30,7 +30,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rust-pulsectl"
-version = "0.2.6"
+version = "0.2.8"
 dependencies = [
  "libpulse-binding 2.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

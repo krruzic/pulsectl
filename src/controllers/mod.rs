@@ -333,9 +333,9 @@ pub struct SourceController {
 }
 
 impl SourceController {
-    pub fn create() -> Self {
-        let handler = Handler::connect("SourceController").unwrap();
-        SourceController { handler }
+    pub fn create() -> Result<Self, ControllerError> {
+        let handler = Handler::connect("SourceController")?;
+        Ok(SourceController { handler })
     }
 
     pub fn get_server_info(&mut self) -> Result<ServerInfo, ControllerError> {
@@ -464,12 +464,13 @@ impl DeviceControl<DeviceInfo> for SourceController {
     fn decrease_device_volume_by_percent(&mut self, index: u32, delta: f64) {
         if let Ok(mut dev_ref) = self.get_device_by_index(index) {
             let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            let volumes = dev_ref.volume.decrease(new_vol).unwrap();
-            let op = self
-                .handler
-                .introspect
-                .set_source_volume_by_index(index, &volumes, None);
-            self.handler.wait_for_operation(op).ok();
+            if let Some(volumes) = dev_ref.volume.decrease(new_vol) {
+                let op = self
+                    .handler
+                    .introspect
+                    .set_source_volume_by_index(index, &volumes, None);
+                self.handler.wait_for_operation(op).ok();
+            }
         }
     }
 }
