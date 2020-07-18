@@ -56,6 +56,10 @@ pub struct Handler {
     pub introspect: introspect::Introspector,
 }
 
+fn connect_error(err: &str) -> PulseCtlError {
+    PulseCtlError::new(ConnectError, err)
+}
+
 impl Handler {
     pub fn connect(name: &str) -> Result<Handler, PulseCtlError> {
         let mut proplist = Proplist::new().unwrap();
@@ -63,19 +67,26 @@ impl Handler {
             .set_str(pulse::proplist::properties::APPLICATION_NAME, name)
             .unwrap();
 
-        let mainloop = Rc::new(RefCell::new(
-            Mainloop::new().expect("Failed to create mainloop"),
-        ));
+        let mainloop;
+        if let Some(m) = Mainloop::new() {
+            mainloop = Rc::new(RefCell::new(m));
+        } else {
+            return Err(connect_error("Failed to create mainloop"));
+        }
 
-        let context = Rc::new(RefCell::new(
+        let context;
+        if let Some(c) =
             Context::new_with_proplist(mainloop.borrow().deref(), "MainConn", &proplist)
-                .expect("Failed to create new context"),
-        ));
+        {
+            context = Rc::new(RefCell::new(c));
+        } else {
+            return Err(connect_error("Failed to create new context"));
+        }
 
         context
             .borrow_mut()
             .connect(None, pulse::context::flags::NOFLAGS, None)
-            .expect("Failed to connect context");
+            .map_err(|_| connect_error("Failed to connect context"))?;
 
         loop {
             match mainloop.borrow_mut().iterate(false) {
