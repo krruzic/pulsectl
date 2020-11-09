@@ -2,41 +2,65 @@
 # It is not intended for manual editing.
 [[package]]
 name = "libc"
-version = "0.2.65"
+version = "0.2.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libpulse-binding"
-version = "2.14.0"
+version = "2.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
- "libpulse-sys 1.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.80 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libpulse-sys 1.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "libpulse-sys"
-version = "1.11.0"
+version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.80 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "pkg-config"
-version = "0.3.17"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rust-pulsectl"
 version = "0.2.6"
 dependencies = [
- "libpulse-binding 2.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libpulse-binding 2.16.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
+[[package]]
+name = "winapi"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
 [metadata]
-"checksum libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)" = "1a31a0627fdf1f6a39ec0dd577e101440b7db22672c0901fe00a9a6fbb5c24e8"
-"checksum libpulse-binding 2.14.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ce86af75d6900db45d0f299d8c8814053b6352226911e2bc385bcf1e3786965b"
-"checksum libpulse-sys 1.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0f0eb9328ce7e28a102ffa7769918adf0b329e31d90e2a2f9d787a841b5ac752"
-"checksum pkg-config 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)" = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
+"checksum libc 0.2.80 (registry+https://github.com/rust-lang/crates.io-index)" = "4d58d1b70b004888f764dfbf6a26a3b0342a1632d33968e4a179d8011c760614"
+"checksum libpulse-binding 2.16.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1795efad67f34ae95740ded62e3c346e707b0caeb0f6088d75958e97316b5538"
+"checksum libpulse-sys 1.13.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5f53857071d564f864755a6945d316cc8fe62c36ed20bd4231c8ab6b62141786"
+"checksum pkg-config 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)" = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
+"checksum winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+"checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+"checksum winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
