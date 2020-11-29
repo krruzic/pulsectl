@@ -1,6 +1,6 @@
 [package]
-name = "rust-pulsectl"
-version = "0.2.6"
+name = "rust-pulsectl-fork"
+version = "0.2.7"
 authors = ["Kristopher Ruzic <krruzic@gmail.com>"]
 edition = "2018"
 license = "GPL-3.0+"
@@ -8,8 +8,8 @@ description = "A higher level API for libpulse_binding"
 readme = "README.md"
 keywords = ["pulse", "pulseaudio", "binding", "audio", "api"]
 categories = ["api-bindings", "multimedia::audio"]
-homepage = "https://github.com/krruzic/pulsectl"
-repository = "https://github.com/krruzic/pulsectl"
+homepage = "https://github.com/JojiiOfficial/pulsectl"
+repository = "https://github.com/JojiiOfficial/pulsectl"
 
 [lib]
 name = "pulsectl"

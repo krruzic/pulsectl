@@ -83,8 +83,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-pulsectl"
-version = "0.2.6"
+name = "rust-pulsectl-fork"
+version = "0.2.7"
 dependencies = [
  "libpulse-binding",
 ]
