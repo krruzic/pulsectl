@@ -1,13 +1,17 @@
 use std::fmt;
 
-use pulse::error::{Code, PAErr};
+use pulse::error::{self, Code, PAErr};
+use std::convert::TryFrom;
 
 impl From<PAErr> for PulseCtlError {
     fn from(error: PAErr) -> Self {
-        let code: Code = error.into();
+        let code = Code::try_from(error)
+            .map_or(error.to_string(), |i| i.to_string())
+            .unwrap_or_default();
+
         PulseCtlError {
             error: PulseCtlErrorType::PulseAudioError,
-            message: format!("PulseAudio returned error code {:?}", code),
+            message: format!("PulseAudio returned error code {}", code),
         }
     }
 }
