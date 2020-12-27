@@ -131,8 +131,6 @@ pub struct DeviceInfo {
     pub latency: MicroSeconds,
     /// Driver name.
     pub driver: Option<String>,
-    /// Flags.
-    pub flags: def::SinkFlagSet,
     /// Property list.
     pub proplist: Proplist,
     /// The latency this device has been configured to.
@@ -169,7 +167,6 @@ impl<'a> From<&'a introspect::SinkInfo<'a>> for DeviceInfo {
             monitor_name: item.monitor_source_name.as_ref().map(|cow| cow.to_string()),
             latency: item.latency,
             driver: item.driver.as_ref().map(|cow| cow.to_string()),
-            flags: item.flags,
             proplist: item.proplist.clone(),
             configured_latency: item.configured_latency,
             base_volume: item.base_volume,
@@ -201,7 +198,6 @@ impl<'a> From<&'a introspect::SourceInfo<'a>> for DeviceInfo {
                 .map(|cow| cow.to_string()),
             latency: item.latency,
             driver: item.driver.as_ref().map(|cow| cow.to_string()),
-            flags: item.flags,
             proplist: item.proplist.clone(),
             configured_latency: item.configured_latency,
             base_volume: item.base_volume,

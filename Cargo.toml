@@ -1,6 +1,6 @@
 [package]
 name = "rust-pulsectl-fork"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["Kristopher Ruzic <krruzic@gmail.com>"]
 edition = "2018"
 license = "GPL-3.0+"
@@ -16,4 +16,4 @@ name = "pulsectl"
 path = "src/lib.rs"
 
 [dependencies]
-libpulse-binding = "2.18.1"
+libpulse-binding = "2.22.0"
