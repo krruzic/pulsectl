@@ -85,7 +85,7 @@ impl Handler {
 
         context
             .borrow_mut()
-            .connect(None, pulse::context::flags::NOFLAGS, None)
+            .connect(None, pulse::context::FlagSet::NOFLAGS, None)
             .map_err(|_| connect_error("Failed to connect context"))?;
 
         loop {
