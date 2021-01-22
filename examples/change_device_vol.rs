@@ -7,7 +7,7 @@ use pulsectl::controllers::SinkController;
 
 fn main() {
     // create handler that calls functions on playback devices and apps
-    let mut handler = SinkController::create();
+    let mut handler = SinkController::create().unwrap();
     let devices = handler
         .list_devices()
         .expect("Could not get list of playback devices");

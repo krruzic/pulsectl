@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt;
 
 use crate::PulseCtlError;
@@ -12,6 +13,14 @@ impl From<PulseCtlError> for ControllerError {
         }
     }
 }
+
+impl fmt::Display for ControllerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for ControllerError {}
 
 impl fmt::Debug for ControllerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
