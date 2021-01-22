@@ -1,6 +1,6 @@
 [package]
 name = "rust-pulsectl-fork"
-version = "0.2.11"
+version = "0.2.12"
 authors = ["Kristopher Ruzic <krruzic@gmail.com>"]
 edition = "2018"
 license = "GPL-3.0+"
