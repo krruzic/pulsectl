@@ -7,6 +7,7 @@
 /// if you want to manipulate recording devices such as microphone volume,
 /// you'll need to use a `SourceController`. Both of these implement the same api, defined by
 /// the traits DeviceControl and AppControl
+
 use std::cell::RefCell;
 use std::clone::Clone;
 use std::rc::Rc;
@@ -34,8 +35,6 @@ pub trait DeviceControl<T> {
     fn get_device_by_name(&mut self, name: &str) -> Result<T, ControllerError>;
     fn set_device_volume_by_index(&mut self, index: u32, volume: &ChannelVolumes);
     fn set_device_volume_by_name(&mut self, name: &str, volume: &ChannelVolumes);
-    fn set_device_mute_by_index(&mut self, index: u32, mute: bool);
-    fn set_device_mute_by_name(&mut self, name: &str, mute: bool);
     fn increase_device_volume_by_percent(&mut self, index: u32, delta: f64);
     fn decrease_device_volume_by_percent(&mut self, index: u32, delta: f64);
 }
@@ -46,6 +45,7 @@ pub trait AppControl<T> {
     fn get_app_by_index(&mut self, index: u32) -> Result<T, ControllerError>;
     fn increase_app_volume_by_percent(&mut self, index: u32, delta: f64);
     fn decrease_app_volume_by_percent(&mut self, index: u32, delta: f64);
+    fn set_app_volume_to_percent(&mut self, index: u32, delta: f64);
 
     fn move_app_by_index(
         &mut self,
@@ -61,7 +61,7 @@ pub trait AppControl<T> {
 }
 
 fn volume_from_percent(volume: f64) -> f64 {
-    (volume * 100.0) * (f64::from(pulse::volume::Volume::NORMAL.0) / 100.0)
+    ((volume * 100.0) * (f64::from(pulse::volume::VOLUME_NORM.0) / 100.0))
 }
 
 pub struct SinkController {
@@ -69,9 +69,9 @@ pub struct SinkController {
 }
 
 impl SinkController {
-    pub fn create() -> Result<Self, ControllerError> {
-        let handler = Handler::connect("SinkController")?;
-        Ok(SinkController { handler })
+    pub fn create() -> Self {
+        let handler = Handler::connect("SinkController").expect("Unable to connect to PulseAudio");
+        SinkController { handler }
     }
 
     pub fn get_server_info(&mut self) -> Result<ServerInfo, ControllerError> {
@@ -176,52 +176,43 @@ impl DeviceControl<DeviceInfo> for SinkController {
             .handler
             .introspect
             .set_sink_volume_by_index(index, volume, None);
-        self.handler.wait_for_operation(op).ok();
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn set_device_volume_by_name(&mut self, name: &str, volume: &ChannelVolumes) {
         let op = self
             .handler
             .introspect
             .set_sink_volume_by_name(name, volume, None);
-        self.handler.wait_for_operation(op).ok();
-    }
-    fn set_device_mute_by_index(&mut self, index: u32, mute: bool) {
-        let op = self
-            .handler
-            .introspect
-            .set_sink_mute_by_index(index, mute, None);
-        self.handler.wait_for_operation(op).ok();
-    }
-    fn set_device_mute_by_name(&mut self, name: &str, mute: bool) {
-        let op = self
-            .handler
-            .introspect
-            .set_sink_mute_by_name(name, mute, None);
-        self.handler.wait_for_operation(op).ok();
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn increase_device_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut dev_ref) = self.get_device_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = dev_ref.volume.increase(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_sink_volume_by_index(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut dev_ref = self
+            .get_device_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = dev_ref
+            .volume
+            .increase(new_vol)
+            .expect("Volume couldn't be set");
+        let op = self
+            .handler
+            .introspect
+            .set_sink_volume_by_index(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn decrease_device_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut dev_ref) = self.get_device_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = dev_ref.volume.decrease(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_sink_volume_by_index(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut dev_ref = self
+            .get_device_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = dev_ref.volume.decrease(new_vol).unwrap();
+        let op = self
+            .handler
+            .introspect
+            .set_sink_volume_by_index(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 }
 
@@ -265,29 +256,53 @@ impl AppControl<ApplicationInfo> for SinkController {
     }
 
     fn increase_app_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut app_ref) = self.get_app_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = app_ref.volume.increase(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_sink_input_volume(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .increase(new_vol)
+            .expect("Volume couldn't be set");
+        let op = self
+            .handler
+            .introspect
+            .set_sink_input_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 
     fn decrease_app_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut app_ref) = self.get_app_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = app_ref.volume.decrease(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_sink_input_volume(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .decrease(new_vol)
+            .expect("Volume couldn't be set");
+        let op = self
+            .handler
+            .introspect
+            .set_sink_input_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
+    }
+
+    fn set_app_volume_to_percent(&mut self, index: u32, delta: f64) {
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .set(2,new_vol);
+        let op = self
+            .handler
+            .introspect
+            .set_sink_input_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 
     fn move_app_by_index(
@@ -349,9 +364,9 @@ pub struct SourceController {
 }
 
 impl SourceController {
-    pub fn create() -> Result<Self, ControllerError> {
-        let handler = Handler::connect("SourceController")?;
-        Ok(SourceController { handler })
+    pub fn create() -> Self {
+        let handler = Handler::connect("SourceController").unwrap();
+        SourceController { handler }
     }
 
     pub fn get_server_info(&mut self) -> Result<ServerInfo, ControllerError> {
@@ -456,52 +471,43 @@ impl DeviceControl<DeviceInfo> for SourceController {
             .handler
             .introspect
             .set_source_volume_by_index(index, volume, None);
-        self.handler.wait_for_operation(op).ok();
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn set_device_volume_by_name(&mut self, name: &str, volume: &ChannelVolumes) {
         let op = self
             .handler
             .introspect
             .set_source_volume_by_name(name, volume, None);
-        self.handler.wait_for_operation(op).ok();
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn increase_device_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut dev_ref) = self.get_device_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = dev_ref.volume.increase(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_source_volume_by_index(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
-    }
-    fn set_device_mute_by_index(&mut self, index: u32, mute: bool) {
+        let mut dev_ref = self
+            .get_device_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = dev_ref
+            .volume
+            .increase(new_vol)
+            .expect("Volume couldn't be set");
         let op = self
             .handler
             .introspect
-            .set_sink_mute_by_index(index, mute, None);
-        self.handler.wait_for_operation(op).ok();
-    }
-    fn set_device_mute_by_name(&mut self, name: &str, mute: bool) {
-        let op = self
-            .handler
-            .introspect
-            .set_sink_mute_by_name(name, mute, None);
-        self.handler.wait_for_operation(op).ok();
+            .set_source_volume_by_index(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
     fn decrease_device_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut dev_ref) = self.get_device_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = dev_ref.volume.decrease(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_source_volume_by_index(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut dev_ref = self
+            .get_device_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = dev_ref.volume.decrease(new_vol).unwrap();
+        let op = self
+            .handler
+            .introspect
+            .set_source_volume_by_index(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 }
 
@@ -545,29 +551,53 @@ impl AppControl<ApplicationInfo> for SourceController {
     }
 
     fn increase_app_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut app_ref) = self.get_app_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = app_ref.volume.increase(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_source_output_volume(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .increase(new_vol)
+            .expect("Volume couldn't be set");
+        let op = self
+            .handler
+            .introspect
+            .set_source_output_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 
     fn decrease_app_volume_by_percent(&mut self, index: u32, delta: f64) {
-        if let Ok(mut app_ref) = self.get_app_by_index(index) {
-            let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
-            if let Some(volumes) = app_ref.volume.decrease(new_vol) {
-                let op = self
-                    .handler
-                    .introspect
-                    .set_source_output_volume(index, &volumes, None);
-                self.handler.wait_for_operation(op).ok();
-            }
-        }
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(delta) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .decrease(new_vol)
+            .expect("Volume couldn't be set");
+        let op = self
+            .handler
+            .introspect
+            .set_source_output_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
+    }
+
+    fn set_app_volume_to_percent(&mut self, index: u32, volume: f64) {
+        let mut app_ref = self
+            .get_app_by_index(index)
+            .expect("Could not find device specified");
+        let new_vol = Volume::from(Volume(volume_from_percent(volume) as u32));
+        println!("{:?}", new_vol.print_verbose(true));
+        let volumes = app_ref
+            .volume
+            .set(2,new_vol);
+        let op = self
+            .handler
+            .introspect
+            .set_source_output_volume(index, &volumes, None);
+        self.handler.wait_for_operation(op).expect("error");
     }
 
     fn move_app_by_index(
